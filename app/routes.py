@@ -19,12 +19,7 @@ def handle_tasks():
         return jsonify(f"Task {new_task.title} successfully created"), 201
 
     elif request.method == "GET":
-        title_query = request.args.get("title")
-        if title_query:
-            tasks = Task.query.filter_by(title=title_query)
-        else:
-            tasks = Task.query.all()
-
+        tasks = Task.query.all()
         tasks_response = []
         for task in tasks:
             tasks_response.append({
