@@ -16,19 +16,34 @@ def handle_tasks():
         )
         db.session.add(new_task)
         db.session.commit()
-        return jsonify(f"Task {new_task.title} successfully created"), 201
+        if new_task.completed_at == None:
+            completed_at = False
+        else:
+            completed_at = True
+        return make_response({
+            "task": {
+                "id": new_task.task_id,
+                "title": new_task.title,
+                "description": new_task.description,
+                "is_complete": completed_at
+            }
+        }, 201)
 
     elif request.method == "GET":
         tasks = Task.query.all()
         tasks_response = []
         for task in tasks:
+            if task.completed_at == None:
+                completed_at = False
+            else:
+                completed_at = True
             tasks_response.append({
-                "task_id": task.task_id,
+                "id": task.task_id,
                 "title": task.title,
                 "description": task.description,
-                "completed_at": task.completed_at
+                "is_complete": completed_at
             })
-        return jsonify(tasks_response)
+        return make_response(jsonify(tasks_response))
 
 @tasks_bp.route("/<task_id>", methods=["GET","PUT","DELETE"])
 def handle_task(task_id):
@@ -37,20 +52,38 @@ def handle_task(task_id):
         return make_response("", 404)
 
     if request.method == "GET":
-        return {
-            "task_id": task.task_id,
-            "title": task.title,
-            "description": task.description,
-            "completed_at": task.completed_at
-        }
+        if task.completed_at == None:
+            completed_at = False
+        else:
+            completed_at = True
+        return make_response({
+            "task": {
+                 "id": task.task_id,
+                 "title": task.title,
+                 "description": task.description,
+                 "is_complete": completed_at
+            }
+        })
 
     elif request.method == "PUT":
         form_data = request.get_json()
+        if ("completed_at" not in form_data or form_data["completed_at"] == None):
+            is_complete = False
+        else:
+            is_complete = True
         task.title = form_data["title"]
         task.description = form_data["description"]
         task.completed_at = form_data["completed_at"]
         db.session.commit()
-        return make_response(f"Task #{task.task_id} successfully updated")
+        response_task = {
+            "task": {
+                "id": task.task_id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": is_complete
+            }
+        }
+        return make_response(response_task, 200)
 
     elif request.method == "DELETE":
         db.session.delete(task)
