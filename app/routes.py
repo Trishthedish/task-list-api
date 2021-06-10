@@ -129,7 +129,7 @@ def mark_complete(task_id):
     slack_path = "https://slack.com/api/chat.postMessage"
     query_params = {
         "channel": "task-notifications",
-        "text": f"A human just completed the following Task: {task.title}",
+        "text": f"Someone just completed the {task.title}",
     }
     headers = {"Authorization": f"Bearer {slack_token}"}
     requests.post(slack_path, params = query_params, headers = headers)
