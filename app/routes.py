@@ -117,7 +117,7 @@ def mark_complete(task_id):
     if task == None:
         return  make_response("Task {task_id} not found", 404)
 
-    task.completed_at = datetime.now()
+    task.completed_at = datetime.utcnow()
     db.session.commit()
 
     return {
@@ -126,5 +126,23 @@ def mark_complete(task_id):
             "title": task.title,
             "description": task.description,
             "is_complete": True
+        }
+    }, 200
+
+@tasks_bp.route("/<task_id>/mark_incomplete", methods=["PATCH"])
+def mark_incomplete(task_id):
+    task = Task.query.get(task_id)
+
+    if task == None:
+        return make_response("Task {taske_id} not found", 404)
+    task.completed_at = None
+
+    db.session.commit()
+    return {
+        "task": {
+            "id": task.task_id,
+            "title": task.title,
+            "description": task.description,
+            "is_complete": False
         }
     }, 200
