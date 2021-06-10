@@ -34,7 +34,14 @@ def handle_tasks():
         }, 201)
 
     elif request.method == "GET":
-        tasks = Task.query.all()
+        sort_query = request.args.get("sort")
+        if sort_query == "asc":
+            tasks = Task.query.order_by(Task.title).all()
+        elif sort_query == "desc":
+            tasks = Task.query.order_by(Task.title.desc()).all()
+        else:
+            tasks = Task.query.all()
+
         tasks_response = []
         for task in tasks:
             if task.completed_at == None:
