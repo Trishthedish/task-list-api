@@ -9,6 +9,10 @@ tasks_bp = Blueprint("tasks", __name__, url_prefix="/tasks")
 def handle_tasks():
     if request.method == "POST":
         request_body = request.get_json()
+        if "title" not in request_body or "description" not in request_body or "completed_at" not in request_body:
+            return {
+                "details": f"Invalid data"
+            }, 400
         new_task = Task(
             title=request_body["title"],
             description=request_body["description"],
@@ -88,4 +92,13 @@ def handle_task(task_id):
     elif request.method == "DELETE":
         db.session.delete(task)
         db.session.commit()
-        return make_response(f"Task #{task.task_id} successfully deleted.")
+        if task.completed_at == None:
+            completed_at = False
+        else:
+            completed_at = True
+        return make_response(
+            {
+            "details":
+               f"Task {task.task_id} \"{task.title}\" successfully deleted"
+            }
+        )
