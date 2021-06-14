@@ -61,7 +61,7 @@ def handle_tasks():
                 "description": task.description,
                 "is_complete": completed_at
             })
-        return make_response(jsonify(tasks_response))
+        return make_response(jsonify(tasks_response), 200)
 
 @tasks_bp.route("/<task_id>", methods=["GET","PUT","DELETE"])
 def handle_task(task_id):
@@ -74,14 +74,27 @@ def handle_task(task_id):
             completed_at = False
         else:
             completed_at = True
-        return make_response({
-            "task": {
-                 "id": task.task_id,
-                 "title": task.title,
-                 "description": task.description,
-                 "is_complete": completed_at
-            }
-        })
+
+        if task.goal_id == None:
+            return make_response({
+                "task": {
+                "id": task.task_id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": completed_at
+                }
+            })
+        else:
+            # goal_id = task.goal_id
+            return make_response({
+                "task": {
+                    "id": task.task_id,
+                    "title": task.title,
+                    "goal_id": task.goal_id,
+                    "description": task.description,
+                    "is_complete": completed_at
+                }
+            })
 
     elif request.method == "PUT":
         form_data = request.get_json()
@@ -122,7 +135,7 @@ def mark_complete(task_id):
     task = Task.query.get(task_id)
 
     if task == None:
-        return  make_response("Task {task_id} not found", 404)
+        return  make_response(f"Task {task_id} not found", 404)
 
     task.completed_at = datetime.utcnow()
     db.session.commit()
@@ -132,6 +145,7 @@ def mark_complete(task_id):
         "channel": "task-notifications",
         "text": f"Someone just completed the {task.title}",
     }
+
     headers = {"Authorization": f"Bearer {slack_token}"}
     requests.post(slack_path, params = query_params, headers = headers)
 
@@ -153,6 +167,7 @@ def mark_incomplete(task_id):
     task.completed_at = None
 
     db.session.commit()
+
     return {
         "task": {
             "id": task.task_id,
@@ -225,3 +240,54 @@ def handle_goal(goal_id):
                 "details": f"Goal {goal.goal_id} \"{goal.title}\" successfully deleted"
             }
         )
+        
+@goals_bp.route("/<goal_id>/tasks", methods=["GET", "POST"])
+def handle_goals_and_tasks(goal_id):
+    if request.method == "POST":
+        goal = Goal.query.get(goal_id)
+        if not goal:
+            return make_response({
+                f"Goal # {goal_id} not found."
+            }, 404)
+        request_body = request.get_json()
+        for id in request_body["task_ids"]:
+            task = Task.query.get(id)
+            goal.tasks.append(task)
+            db.session.add(goal)
+            db.session.commit()
+
+        return make_response({
+            "id": goal.goal_id,
+            "task_ids": request_body["task_ids"]
+        })
+
+    elif request.method == "GET":
+        goal = Goal.query.get(goal_id)
+
+        if not goal:
+            return make_response(f"Goal {goal_id} not FOUND", 404)
+        tasks = goal.tasks
+
+        list_of_tasks = []
+
+        for task in tasks:
+            if task.completed_at == None:
+                completed_at = False
+            else:
+                completed_at = True
+
+            individual_task = {
+                "task": {
+                    "id": task.task_id,
+                     "goal_id": goal.goal_id,
+                     "title": task.title,
+                     "description": task.description,
+                     "is_complete": completed_at
+                }
+            }
+            list_of_tasks.append(individual_task)
+        return make_response({
+            "id": goal.goal_id,
+            "title": goal.title,
+            "tasks": list_of_tasks
+        })
