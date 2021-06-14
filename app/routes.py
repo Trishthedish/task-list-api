@@ -277,13 +277,11 @@ def handle_goals_and_tasks(goal_id):
                 completed_at = True
 
             individual_task = {
-                "task": {
-                    "id": task.task_id,
-                     "goal_id": goal.goal_id,
-                     "title": task.title,
-                     "description": task.description,
-                     "is_complete": completed_at
-                }
+                "id": task.task_id,
+                "goal_id": goal.goal_id,
+                "title": task.title,
+                "description": task.description,
+                "is_complete": completed_at
             }
             list_of_tasks.append(individual_task)
         return make_response({
